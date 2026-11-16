@@ -1,4 +1,4 @@
-# Mini-blockchain pédagogique en Python
+# TP3 / Mini-blockchain pédagogique en Python / Travail D'éequipe
 
 ## L'objectif du Sujet
 une simulation qui montre comment des blocs sont reliés par des empreintes cryptographiques. Ce sujet figure dans la liste du TP. Il convient bien à 4 personnes, car il se découpe en tâches indépendantes, donc sans conflits Git. Il ne demande ni argent réel ni outil compliqué.
