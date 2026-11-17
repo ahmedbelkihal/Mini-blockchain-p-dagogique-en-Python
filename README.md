@@ -8,7 +8,6 @@ une simulation qui montre comment des blocs sont reliés par des empreintes cryp
 - FATIMAEZZAHRA ELHOUSSAINI — https://github.com/fatimaezzahraelhoussaini88-bot
 - ABDELHALIM ELKARMANI — https://github.com/abdelhalimelkarmani-bit
 - AHMED BELKIHAL — https://github.com/ahmedbelkihal
-- YASSINE LAGHLAM — 
 - YASSINE LAGHLAM — Https://github.com/Yassine-Leghlam
 =======
 # Mini-blockchain-p-dagogique-en-Python
