@@ -78,3 +78,15 @@ La blockchain publique favorise la transparence et la décentralisation, tandis 
 En revanche, une base de données classique est généralement plus simple à gérer et adaptée aux systèmes centralisés.
 
 Notre mini-blockchain pédagogique permet de comprendre le principe fondamental de la technologie blockchain : le chaînage des blocs par des empreintes cryptographiques SHA-256.
+
+Cependant, elle présente certaines limites :
+
+Elle ne possède pas de mécanisme de consensus entre plusieurs participants.
+
+Elle ne fonctionne pas sur un réseau décentralisé.
+
+Elle ne garantit pas une sécurité complète contre les modifications.
+
+Elle ne dispose pas d'un système de validation des transactions.
+
+Cette réalisation reste donc un modèle pédagogique destiné à illustrer le fonctionnement de base d'une blockchain, et non une blockchain complète destinée à être utilisée en production.
