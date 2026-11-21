@@ -1,0 +1,166 @@
+"""
+Mini-blockchain pédagogique : vérification de la chaîne + démonstration de falsification.
+
+Lancer :  python miniblockchain.py
+"""
+
+import hashlib
+import json
+import time
+
+DIFFICULTE = 3  # nombre de zéros attendus au début du hash (preuve de travail)
+
+
+# ---------------------------------------------------------------------------
+# Bloc
+# ---------------------------------------------------------------------------
+class Block:
+    def __init__(self, index, data, previous_hash, timestamp=None, nonce=0):
+        self.index = index
+        self.timestamp = timestamp if timestamp is not None else time.time()
+        self.data = data
+        self.previous_hash = previous_hash
+        self.nonce = nonce
+        self.hash = self.compute_hash()
+
+    def compute_hash(self):
+        """SHA-256 du contenu du bloc (hash exclu)."""
+        contenu = json.dumps(
+            {
+                "index": self.index,
+                "timestamp": self.timestamp,
+                "data": self.data,
+                "previous_hash": self.previous_hash,
+                "nonce": self.nonce,
+            },
+            sort_keys=True,
+        )
+        return hashlib.sha256(contenu.encode()).hexdigest()
+
+    def mine(self, difficulte=DIFFICULTE):
+        """Preuve de travail : incrémente le nonce jusqu'à un hash préfixé de N zéros."""
+        cible = "0" * difficulte
+        while not self.hash.startswith(cible):
+            self.nonce += 1
+            self.hash = self.compute_hash()
+
+
+# ---------------------------------------------------------------------------
+# Chaîne
+# ---------------------------------------------------------------------------
+class Blockchain:
+    def __init__(self, difficulte=DIFFICULTE):
+        self.difficulte = difficulte
+        self.chain = []
+        genesis = Block(0, "Bloc genesis", "0")
+        genesis.mine(self.difficulte)
+        self.chain.append(genesis)
+
+    def add_block(self, data):
+        dernier = self.chain[-1]
+        bloc = Block(dernier.index + 1, data, dernier.hash)
+        bloc.mine(self.difficulte)
+        self.chain.append(bloc)
+        return bloc
+
+    # ----- VÉRIFICATION -----------------------------------------------------
+    def verify(self):
+        """
+        Vérifie toute la chaîne. Retourne (est_valide, liste_d_erreurs).
+
+        Pour chaque bloc, 4 contrôles :
+          1. Intégrité   : le hash stocké == hash recalculé du contenu
+          2. Chaînage    : previous_hash == hash du bloc précédent
+          3. Index       : index == position dans la chaîne
+          4. Travail     : le hash respecte la difficulté (preuve de travail)
+        """
+        erreurs = []
+        cible = "0" * self.difficulte
+
+        for i, bloc in enumerate(self.chain):
+            if bloc.hash != bloc.compute_hash():
+                erreurs.append(f"Bloc {i} : contenu modifié (hash stocké ≠ hash recalculé)")
+
+            if i > 0 and bloc.previous_hash != self.chain[i - 1].hash:
+                erreurs.append(f"Bloc {i} : lien rompu (previous_hash ≠ hash du bloc {i - 1})")
+
+            if bloc.index != i:
+                erreurs.append(f"Bloc {i} : index incohérent ({bloc.index})")
+
+            if not bloc.hash.startswith(cible):
+                erreurs.append(f"Bloc {i} : preuve de travail invalide")
+
+        return len(erreurs) == 0, erreurs
+
+
+# ---------------------------------------------------------------------------
+# Affichage
+# ---------------------------------------------------------------------------
+def afficher_chaine(bc):
+    for b in bc.chain:
+        print(f"  [{b.index}] data={b.data!r:<28} hash={b.hash[:12]}…  prev={b.previous_hash[:12]}…")
+
+
+def afficher_verification(bc):
+    ok, erreurs = bc.verify()
+    if ok:
+        print("  ✅ Chaîne VALIDE")
+    else:
+        print("  ❌ Chaîne INVALIDE :")
+        for e in erreurs:
+            print(f"     - {e}")
+    return ok
+
+
+# ---------------------------------------------------------------------------
+# Démonstration de falsification
+# ---------------------------------------------------------------------------
+def demo_falsification():
+    print("=" * 70)
+    print("ÉTAPE 0 : construction d'une chaîne saine")
+    print("=" * 70)
+    bc = Blockchain()
+    bc.add_block("Alice -> Bob : 50 MAD")
+    bc.add_block("Bob -> Carol : 20 MAD")
+    bc.add_block("Carol -> Dave : 5 MAD")
+    afficher_chaine(bc)
+    afficher_verification(bc)
+
+    # --- Attaque 1 : modifier les données seulement -------------------------
+    print("\n" + "=" * 70)
+    print("ATTAQUE 1 : on modifie les données du bloc 1 (50 -> 5000 MAD)")
+    print("=" * 70)
+    bc.chain[1].data = "Alice -> Bob : 5000 MAD"
+    afficher_verification(bc)
+    print("  → Détectée : le hash stocké ne correspond plus au contenu.")
+
+    # --- Attaque 2 : modifier + recalculer le hash du bloc ------------------
+    print("\n" + "=" * 70)
+    print("ATTAQUE 2 : l'attaquant recalcule aussi le hash du bloc 1")
+    print("=" * 70)
+    bc.chain[1].hash = bc.chain[1].compute_hash()
+    afficher_verification(bc)
+    print("  → Détectée : le hash change, donc le bloc 2 ne pointe plus vers lui,")
+    print("    et le nouveau hash ne respecte pas la preuve de travail.")
+
+    # --- Attaque 3 : re-miner tout le reste de la chaîne ---------------------
+    print("\n" + "=" * 70)
+    print("ATTAQUE 3 : l'attaquant re-mine le bloc 1 ET tous les suivants")
+    print("=" * 70)
+    debut = time.time()
+    for i in range(1, len(bc.chain)):
+        bloc = bc.chain[i]
+        bloc.previous_hash = bc.chain[i - 1].hash
+        bloc.nonce = 0
+        bloc.hash = bloc.compute_hash()
+        bloc.mine(bc.difficulte)
+    duree = time.time() - debut
+    afficher_verification(bc)
+    print(f"  → La chaîne redevient valide, mais il a fallu re-miner "
+          f"{len(bc.chain) - 1} blocs ({duree:.2f} s).")
+    print("    Dans un vrai réseau, l'attaquant devrait aussi dépasser la puissance")
+    print("    de calcul de tous les autres mineurs : c'est la sécurité de la blockchain.")
+
+
+if __name__ == "__main__":
+    demo_falsification()
